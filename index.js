@@ -1,7 +1,11 @@
+const micro = require('micro')
+const { router, get, post, put } = require('microrouter')
+const fs = require('fs')
+const path = require('path')
 const NodeWebcam = require("node-webcam")
 const { promisify } = require('util');
 const io = require('socket.io-client')
-console.log('-', process.env)
+const TEMP_FILE_NAME = 'temp'
 
 const opts = {
   width: 640,
@@ -14,15 +18,38 @@ const opts = {
   verbose: false
 }
 const capture = promisify(NodeWebcam.capture)
-const socket = io(process.env.SOCKET_HOST || 'http://localhost:3000',{
+const socket = io(process.env.SOCKET_HOST || 'http://localhost:3000', {
   query: process.env.SECRET
 })
 
-socket.on('event',async (data)=>{
-  try{
-    const buffer = await capture('temp', opts)
+socket.on('event', async (data) => {
+  try {
+    const buffer = await capture(TEMP_FILE_NAME, opts)
     socket.emit('cam', { buffer })
-  }catch(e){
+  } catch (e) {
     console.log("capture error", e)
   }
 })
+
+const html = fs.readFileSync(path.join(__dirname, 'main.html'))
+const server = micro(router(
+  get('/', async (req, res) => {
+    console.log('Serving index.html')
+    res.end(html)
+  }),
+  get(`/${TEMP_FILE_NAME}.jpg`, async (req, res) => {
+    console.log('Serving jpeg')
+    const jpeg = fs.readFileSync(path.join(__dirname, `${TEMP_FILE_NAME}.jpg`))
+    res.end(jpeg)
+  }),
+  post('/refresh', async (req, res) => {
+    try {
+      await capture('temp', opts)
+      micro.send(res, 200, { status: 'ok' });
+    } catch (e) {
+      console.error('refresh error: ', e)
+      micro.send(res, 400, { error: e })
+    }
+  })))
+
+server.listen(process.env.PORT || 3003)
