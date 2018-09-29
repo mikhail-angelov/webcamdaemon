@@ -1,0 +1,24 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=800, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Salfi</title>
+  <script src="https://code.jquery.com/jquery-1.11.1.js"></script>
+</head>
+
+<body>
+  <button id="refresh">Refresh</button>
+  <img id="salfi" src="temp.jpg" />
+  <script>
+    $('#refresh').click(() => {
+      $.post('/refresh',{})
+        .then(() => {
+          $('#salfi').attr('src',`temp.jpg?dc=${Date.now()}`)
+        })
+    })
+  </script>
+</body>
+
+</html>
