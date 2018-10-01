@@ -18,19 +18,28 @@ const opts = {
   verbose: false
 }
 const capture = promisify(NodeWebcam.capture)
-const socket = io(process.env.SOCKET_HOST || 'http://localhost:3000', {
-  query: process.env.SECRET
+const socket = io(process.env.SOCKET_HOST || 'http://localhost:4000', {
+  query: {
+    token: process.env.SECRET,
+    cam: 'test-camera'
+  }
 })
 
 socket.on('event', async (data) => {
   try {
+    console.log('onEvent: ', data)
     const buffer = await capture(TEMP_FILE_NAME, opts)
-    socket.emit('cam', { buffer })
+    socket.emit('event', { buffer, chatId: data.chatId })
   } catch (e) {
     console.log("capture error", e)
   }
 })
-
+socket.on('connect', () => {
+  console.log('onConnect')
+})
+socket.on('disconnect', () => {
+  console.log('onDisconnect')
+})
 const html = fs.readFileSync(path.join(__dirname, 'main.html'))
 const server = micro(router(
   get('/', async (req, res) => {
