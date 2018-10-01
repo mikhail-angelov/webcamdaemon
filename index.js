@@ -40,6 +40,9 @@ socket.on('connect', () => {
 socket.on('disconnect', () => {
   console.log('onDisconnect')
 })
+socket.on('error', (err) => {
+  console.log('error: ',err)
+})
 const html = fs.readFileSync(path.join(__dirname, 'main.html'))
 const server = micro(router(
   get('/', async (req, res) => {
@@ -60,5 +63,5 @@ const server = micro(router(
       micro.send(res, 400, { error: e })
     }
   })))
-
-server.listen(process.env.PORT || 3003)
+const port = process.env.PORT || 3003
+server.listen(port, ()=>console.log('app is started on: ', port))
